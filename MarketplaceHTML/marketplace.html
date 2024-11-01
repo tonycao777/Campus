@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post - Campus APP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px; /* Added padding */
+            box-sizing: border-box; /* Ensure padding doesn't affect layout */
+        }
+
+        .post-container {
+            max-width: 500px;
+            width: 100%;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: auto; /* Center the container */
+        }
+
+        h1 {
+            text-align: center;
+            color: #4A90E2;
+            margin-bottom: 20px;
+        }
+
+        .post-container input, .post-container textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .post-container button {
+            width: 100%;
+            padding: 14px;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .post-container button:hover {
+            background-color: #357ABD;
+        }
+
+        /* Top-right corner for displaying email */
+        .logged-in-email {
+            position: absolute;
+            top: 20px; /* Adjusted position */
+            right: 20px;
+            font-size: 14px;
+            color: #4A90E2;
+        }
+
+        .my-posts {
+            margin-top: 30px;
+        }
+
+        .post {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+
+        .delete-btn {
+            background-color: #E74C3C;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .delete-btn:hover {
+            background-color: #C0392B;
+        }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <div class="logged-in-email" id="logged-in-email"></div> <!-- Email display -->
+        <h1>Post an Item</h1>
+        <input type="text" id="item-title" placeholder="Item Title" required>
+        <textarea id="item-description" placeholder="Item Description" required></textarea>
+        <input type="text" id="item-price" placeholder="Item Price" required>
+        <input type="text" id="item-location" placeholder="Item Location" required>
+        <input type="text" id="item-contact" placeholder="Contact Information (e.g., email or phone)" required>
+        <input type="file" id="item-pictures" accept="image/*" multiple required>
+        <button id="post-btn">Post Item</button>
+
+        <div class="my-posts">
+            <h2>Your Posts</h2>
+            <div id="user-posts"></div>
+        </div>
+
+        <a href="all-items.html" class="back-to-items">Go back to All Items</a>
+    </div>
+
+    <script>
+        const loggedInUser = sessionStorage.getItem('loggedInUser');
+        let marketplacePosts = JSON.parse(localStorage.getItem('marketplacePosts')) || [];
+        const emailDisplay = document.getElementById('logged-in-email');
+        const userPostsContainer = document.getElementById('user-posts');
+
+        // Display logged in user email at the top-right corner
+        emailDisplay.innerText = `Logged in as: ${loggedInUser}`;
+
+        // Load user's previous posts
+        function loadUserPosts() {
+            userPostsContainer.innerHTML = '';
+
+            const userPosts = marketplacePosts.filter(post => post.user === loggedInUser);
+            
+            userPosts.forEach((post, index) => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                postElement.innerHTML = `
+                    <p><strong>Title:</strong> ${post.title}</p>
+                    <p><strong>Description:</strong> ${post.description}</p>
+                    <p><strong>Price:</strong> ${post.price}</p>
+                    <p><strong>Location:</strong> ${post.location}</p>
+                    <p><strong>Contact Info:</strong> ${post.contact}</p>
+                    <p><strong>Date Posted:</strong> ${post.datePosted}</p>
+                    <img src="${post.picture}" alt="Item Picture" style="max-width: 100%; height: auto;">
+                    <button class="delete-btn" data-index="${index}">Delete</button>
+                `;
+
+                userPostsContainer.appendChild(postElement);
+            });
+
+            // Delete post
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const postIndex = this.getAttribute('data-index');
+                    marketplacePosts.splice(postIndex, 1);
+                    localStorage.setItem('marketplacePosts', JSON.stringify(marketplacePosts));
+                    loadUserPosts();
+                });
+            });
+        }
+
+        document.getElementById('post-btn').addEventListener('click', function() {
+            const title = document.getElementById('item-title').value;
+            const description = document.getElementById('item-description').value;
+            const price = document.getElementById('item-price').value;
+            const location = document.getElementById('item-location').value;
+            const contact = document.getElementById('item-contact').value;
+            const pictureInput = document.getElementById('item-picture');
+            const pictureFile = pictureInput.files[0];
+
+            if (title && description && price && location && contact && pictureFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const newPost = {
+                        title,
+                        description,
+                        price,
+                        location,
+                        contact,
+                        picture: e.target.result,
+                        datePosted: new Date().toLocaleDateString(),
+                        user: loggedInUser
+                    };
+
+                    marketplacePosts.push(newPost);
+                    localStorage.setItem('marketplacePosts', JSON.stringify(marketplacePosts));
+
+                    alert('Your item has been posted!');
+                    
+                    // Clear the input fields
+                    document.getElementById('item-title').value = '';
+                    document.getElementById('item-description').value = '';
+                    document.getElementById('item-price').value = '';
+                    document.getElementById('item-location').value = '';
+                    document.getElementById('item-contact').value = '';
+                    pictureInput.value = '';
+
+                    // Load user's posts dynamically without freezing the screen
+                    loadUserPosts();
+                };
+
+                reader.readAsDataURL(pictureFile);
+            } else {
+                alert('Please fill in all fields and upload a picture.');
+            }
+        });
+
+        // Load user's posts on page load
+        window.onload = loadUserPosts;
+    </script>
+</body>
+</html>

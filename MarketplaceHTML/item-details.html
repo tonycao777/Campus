@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .item-details-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #555;
+        }
+
+        img {
+            max-width: 100%;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        #comment-section {
+            margin-top: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .back-to-items {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .back-to-items:hover {
+            color: #0056b3;
+        }
+
+        #comments-container {
+            margin-top: 20px;
+        }
+
+        .comment {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+
+        /* Flexbox for images */
+        .item-pictures {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .item-pictures img {
+            max-width: 48%;
+            border-radius: 8px;
+        }
+
+        .posted-by {
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        // Retrieve selected item from sessionStorage
+        const selectedItem = JSON.parse(sessionStorage.getItem('selectedItem'));
+    
+        // Function to load item details on the page
+        function loadItemDetails() {
+            // Display the item details
+            document.getElementById('item-title').innerText = selectedItem.title;
+            document.getElementById('item-description').innerText = selectedItem.description;
+            document.getElementById('item-price').innerText = selectedItem.price;
+            document.getElementById('item-location').innerText = selectedItem.location;
+            document.getElementById('item-contact').innerText = selectedItem.contact;
+            document.getElementById('item-date').innerText = selectedItem.datePosted;
+    
+            // Display user status (posted by you or someone else)
+            const loggedInUser = sessionStorage.getItem('loggedInUser');
+            const postedByText = selectedItem.user === loggedInUser ? 'Posted by You' : 'Posted by Someone else';
+            document.getElementById('posted-by').innerText = postedByText;
+    
+            // Display all pictures
+            const picturesContainer = document.getElementById('item-pictures');
+            picturesContainer.innerHTML = ''; // Clear previous images
+    
+            if (selectedItem.pictures && selectedItem.pictures.length > 0) {
+                selectedItem.pictures.forEach(picture => {
+                    const img = document.createElement('img');
+                    img.src = picture;
+                    picturesContainer.appendChild(img);
+                });
+            } else {
+                picturesContainer.innerHTML = `<p>No pictures available.</p>`;
+            }
+        }
+    
+        // Load existing comments on page load
+        window.onload = function () {
+            loadItemDetails();
+        }
+    </script>
+
+</body>
+</html>

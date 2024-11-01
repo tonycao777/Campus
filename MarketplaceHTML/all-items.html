@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Items - Campus APP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4A90E2;
+            margin-bottom: 20px;
+        }
+
+        .items-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .item {
+            border-bottom: 1px solid #ccc;
+            padding: 15px 0;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .item p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .user-status {
+            font-style: italic;
+            color: #888;
+        }
+
+        .item strong {
+            color: #333;
+        }
+
+        .post-button {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 12px;
+            background-color: #4A90E2;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .post-button:hover {
+            background-color: #357ABD;
+        }
+
+        /* Top-right corner for displaying email */
+        .logged-in-email {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 14px;
+            color: #4A90E2;
+        }
+
+        .item img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="logged-in-email" id="logged-in-email"></div> <!-- Email display -->
+    <h1>All Items</h1>
+    
+    <!-- Post an item button -->
+    <a href="marketplace.html" class="post-button">Post an Item</a>
+
+    <div class="items-container" id="items-container">
+        <!-- Items will be populated here -->
+    </div>
+
+    <script>
+        const loggedInUser = sessionStorage.getItem('loggedInUser');
+        const marketplacePosts = JSON.parse(localStorage.getItem('marketplacePosts')) || [];
+        const itemsContainer = document.getElementById('items-container');
+        const emailDisplay = document.getElementById('logged-in-email');
+    
+        // Display logged-in user email at the top-right corner
+        emailDisplay.innerText = `Logged in as: ${loggedInUser}`;
+    
+        // Load all items in a brief view (only first image and key details)
+        function loadAllItems() {
+            itemsContainer.innerHTML = '';  // Clear previous items
+    
+            marketplacePosts.forEach((post, index) => {
+                const item = document.createElement('div');
+                item.className = 'item';
+    
+                const userStatus = post.user === loggedInUser ? 'Posted by You' : 'Posted by Someone else';
+    
+                // Displaying only the first image if available
+                let firstImageHTML = '';
+                if (post.pictures && post.pictures.length > 0) {
+                    firstImageHTML = `<img src="${post.pictures[0]}" alt="Item Picture" style="max-width: 200px;">`;
+                } else {
+                    firstImageHTML = '<p>No image available</p>';
+                }
+    
+                item.innerHTML = `
+                    <h3>${post.title}</h3>
+                    ${firstImageHTML}
+                    <p><strong>Price:</strong> ${post.price}</p>
+                    <p><strong>Location:</strong> ${post.location}</p>
+                    <p class="user-status">${userStatus}</p>
+                    <button onclick="viewItemDetails(${index})">View Details</button>
+                `;
+    
+                itemsContainer.appendChild(item);
+            });
+        }
+    
+        // Function to view detailed item page (showing all images and full details)
+        function viewItemDetails(index) {
+            const post = marketplacePosts[index];
+            sessionStorage.setItem('selectedItem', JSON.stringify(post)); // Save the selected item
+            window.location.href = 'item-details.html'; // Redirect to item details page
+        }
+    
+        window.onload = loadAllItems;
+    </script>
+</body>
+</html>

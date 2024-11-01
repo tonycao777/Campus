@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Campus APP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #4A90E2;
+            text-align: center;
+        }
+
+        .signup-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .signup-container input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            align-items: center;
+        }
+
+        .signup-container button {
+            width: 80%;
+            padding: 12px;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+            align-items: center;
+        }
+
+        .signup-container button:hover {
+            background-color: #357ABD;
+        }
+
+        .signup-container .signin-link {
+            text-align: center;
+            display: block;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sign Up</h1>
+    <div class="signup-container">
+        <input type="email" id="signup-email" placeholder="Enter your @duke.edu email" required>
+        <input type="password" id="signup-password" placeholder="Enter a password (min 8 characters)" required>
+        <button id="signup-btn">Sign Up</button>
+        <a href="index.html" class="signin-link">Already have an account? Sign In</a>
+    </div>
+
+    <script>
+        document.getElementById('signup-btn').addEventListener('click', function() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            // Check if the email ends with @duke.edu and password length > 8
+            if (email.endsWith('@duke.edu') && password.length >= 8) {
+                const users = JSON.parse(localStorage.getItem('users')) || [];
+                if (users.some(user => user.email === email)) {
+                    alert('Email already registered.');
+                    return;
+                }
+
+                // Save user details in localStorage
+                users.push({ email, password });
+                localStorage.setItem('users', JSON.stringify(users));
+
+                // Mock sending a confirmation email
+                alert('A confirmation email has been sent to ' + email);
+
+                // Redirect to sign-in (index) page after sign-up
+                window.location.href = 'login.html';
+            } else {
+                alert('Please enter a valid @duke.edu email and a password with at least 8 characters.');
+            }
+        });
+    </script>
+</body>
+</html>
