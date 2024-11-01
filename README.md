@@ -42,4 +42,4 @@ This project aims to create a marketplace platform specifically designed for stu
 
 1. **Clone the Repository:**
    ```bash
-   git clone [https://github.com/your_username/campus-marketplace.git](https://github.com/your_username/campus-marketplace.git)
+   git clone [https://github.com/your_username/Campus.git](https://github.com/your_username/Campus.git)
