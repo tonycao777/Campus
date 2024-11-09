@@ -1,0 +1,60 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase 9</title>
+</head>
+<body>
+    <h1> Getting Started with Firebase 9</h1>
+    <h2> Firebase Firestore </h2>
+
+    <form class = 'add'>
+        <label for = "Cost">Cost: </label>
+        <input type = "text" name = "Cost" required>
+        <label for = "Date">Date: </label>
+        <input type = "text" name = "Date" required>
+        <label for = "Location">Location: </label>
+        <input type = "text" name = "Location" required>
+        
+        <button>Add a New Ride</button>
+    </form>
+
+    <form class = "delete">
+        <label for = "id">Document Id:</label>
+        <input type = "text" name = "id" required>
+
+        <button>Delete a Ride</button>
+    </form>
+
+    <form class = "update">
+        <label for = "id">Document Id: </label>
+        <input type = 'text' name = 'id' required>
+
+        <button>Update a Ride</button>
+    </form>
+
+    <h2>Firebase Auth</h2>
+
+    <form class = 'signup'>
+        <label for = 'email'>Email:</label>
+        <input type = 'email' name = 'email'>
+        <label for = 'password'>Password:</label>
+        <input type = 'password' name= 'password'>
+        <button>Sign Up</button>
+    </form>
+
+    <form class = 'login'>
+        <label for = 'email'>Email:</label>
+        <input type = 'email' name = 'email'>
+        <label for = 'password'>Password:</label>
+        <input type = 'password' name= 'password'>
+        <button>Log In</button>
+    </form>
+
+    <button class = 'logout'>Log Out</button>
+
+    <h2>Unsubscribing</h2>
+    <button class = 'unsub'>unsubscribe from db/auth changes</button>
+    <script src = "bundle.js"></script>
+</body>
+</html>
