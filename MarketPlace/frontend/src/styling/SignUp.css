@@ -1,0 +1,87 @@
+
+
+.login-page2 {
+    width: 500px;
+    margin-left:500px;
+    margin-right: 20px;
+    margin-top: 150px;
+    display: flex;
+    flex-direction: column;
+}
+
+.login-form2 {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group2 {
+    margin-bottom: 15px;
+}
+
+.form-group2 label {
+    display: block;
+    margin-bottom: 10px;
+    margin-right: 500px;
+    font-weight: bold;
+}
+
+.form-group2 input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.sign-in-button2 {
+    padding: 10px;
+    background-color: #8d04be;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.sign-in-button2:hover {
+    background-color: #8d04be;
+}
+
+.success-message2 {
+    color: green;
+    margin-top: 10px;
+}
+
+.error-message2 {
+    color: red;
+    margin-top: 10px;
+}
+
+.sign-up-link2 {
+    color: blue;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.password-container2 {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-container2 input {
+    padding-right: 30px; /* Add padding to make space for the icon */
+}
+
+.eye-icon2 {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    color: #888; /* Customize the color as needed */
+}
+
+.subheading2{
+    font-size: small;
+    font-weight: 250;
+    margin-bottom: 10px;
+}
