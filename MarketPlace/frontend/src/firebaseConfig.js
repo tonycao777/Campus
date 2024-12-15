@@ -1,7 +1,7 @@
 // firebaseConfig.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore"; // Using addDoc to add users
+import { getFirestore, collection, addDoc, getDocs, getDoc, query, where, deleteDoc, doc } from "firebase/firestore"; // Using addDoc to add users
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
@@ -31,6 +31,19 @@ export const fetchItems = async () => {
   return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
 };
 
+// Fetch items by campus
+export const fetchItemsByCampus = async (campus) => {
+  try {
+    const q = query(itemRef, where("campus", "==", campus)); // Query for items where the campus field matches the selected campus
+    const snapshot = await getDocs(q); // Get the query snapshot
+    const items = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+    return items; // Return the filtered items
+  } catch (error) {
+    console.error("Error fetching items by campus:", error);
+    return [];
+  }
+};
+
 // Add new item to Firestore
 export const postItem = async (itemData) => {
   await addDoc(itemRef, { ...itemData, userId: auth.currentUser.uid });
@@ -40,6 +53,18 @@ export const postItem = async (itemData) => {
 export const deleteItem = async (itemId) => {
   await deleteDoc(doc(db, 'Items', itemId));
 };
+
+export const fetchItemById = async (itemId) => {
+  const itemRef = doc(db, 'Items', itemId);
+  const itemDoc = await getDoc(itemRef);
+  if (itemDoc.exists()) {
+    return itemDoc.data();
+  } else {
+    console.log("Item not found!");
+    return null;
+  }
+};
+
 
 
 // Fetching users from Firestore (just for demonstration, this would be in your app logic)
@@ -69,6 +94,29 @@ const consoleFetchItems = async () => {
     console.log(err.message);
   }
 };
+
+export const fetchUserFullName = async (userId) => {
+  try {
+    console.log(userId);
+    const usersCollectionRef = collection(db, "Users"); // Reference the "Users" collection
+    const q = query(usersCollectionRef, where("userId", "==", userId)); // Query for the document with matching userId
+
+    const querySnapshot = await getDocs(q); // Fetch the query results
+
+    if (!querySnapshot.empty) {
+      const userDoc = querySnapshot.docs[0]; // Assume only one match exists
+      const { firstName, lastName } = userDoc.data();
+      return `${firstName} ${lastName}`;
+    } else {
+      console.warn(`User with userId ${userId} not found.`);
+      return "Unknown User";
+    }
+  } catch (error) {
+    console.error("Error fetching user full name:", error);
+    return "Unknown User";
+  }
+};
+
 
 consoleFetchItems();
 

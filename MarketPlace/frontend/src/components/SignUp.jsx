@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, db, fetchUsers } from '../firebaseConfig'; // Import Firestore functions
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'; // Import sendEmailVerification
 import { addDoc, collection } from 'firebase/firestore'; // Add user to Firestore
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
@@ -8,70 +8,165 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate for routin
 import '../styling/SignUp.css';
 
 const SignUp = ({ toggleAuthMode }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        university: '',
+        address: '',
+        city: '',
+        zip: '',
+        state: '',
+        cellphone: '',
+    });
+
+    const [universities, setUniversities] = useState([]);
     const [error, setError] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const navigate = useNavigate(); 
+
+    const states = [
+        'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+        'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+        'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+        'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
+        'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+        'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma',
+        'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+        'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+        'Wisconsin', 'Wyoming'
+    ];
+
+    useEffect(() => {
+        // Fetch all universities in the US
+        const fetchUniversities = async () => {
+            try {
+                const response = await fetch('/world_universities_and_domains.json');
+                const data = await response.json();
+                const filteredUniversities = data.filter((university) => university.country === 'United States');
+                
+                setUniversities(filteredUniversities);
+            } catch (error) {
+                console.error("Error fetching universities:", error);
+            }
+        };
+
+        fetchUniversities();
+    }, []);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
 
     const handleSignUp = async (event) => {
         event.preventDefault();
         setError(null); // Reset error message
         setSuccessMessage(''); // Reset success message
 
-        // Basic email and password validation
+        const { email, password, firstName, lastName, university, address, city, zip, state, cellphone } = formData;
+
         if (!email.endsWith('.edu')) {
-            setError('Email must be an .edu address');
+            setError('Please use a valid .edu email address.');
             return;
         }
+        
         if (password.length <= 8) {
             setError('Password must be greater than 8 characters');
             return;
         }
 
         try {
-            // Sign up the user with Firebase Authentication
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // Store user data in Firestore under the Users collection
             await addDoc(collection(db, 'Users'), {
+                userId: user.uid,
                 email: user.email,
+                firstName,
+                lastName,
+                university,
+                address,
+                city,
+                zip,
+                state,
+                cellphone,
                 createdAt: new Date().toISOString(),
             });
 
-            // Optionally, update the local users array in the component
-            fetchUsers(); // Refresh the users array
+            fetchUsers(); // Optionally refresh users list
+            await sendEmailVerification(user); // Send verification email
 
-            // Display success message and redirect to login after a delay
-            setSuccessMessage('Successfully signed up! Please log in.');
+            setSuccessMessage('Successfully signed up! A verification email has been sent.');
             setTimeout(() => {
                 toggleAuthMode(); // Switch to sign-in mode
                 navigate('/'); // Navigate to home or login page
-            }, 500); // Delay to show the success message before redirecting
+            }, 1000);
 
         } catch (signUpError) {
-            setError(signUpError.message); // Display the error message
+            setError(signUpError.message);
         }
     };
 
     const togglePasswordVisibility = () => {
-        setShowPassword((prevShowPassword) => !prevShowPassword); // Toggle password visibility
+        setShowPassword((prevShowPassword) => !prevShowPassword);
     };
 
     return (
         <div className="login-page2">
+            <div className='signUptitle'>
             <h1>Welcome to Campus Market</h1>
+            </div>
             <h2 className="subheading2"> Please enter your details</h2>
             <form onSubmit={handleSignUp} className="login-form2">
                 <div className="form-group2">
-                    <label>Username </label>
+                    <label>First Name </label>
+                    <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        placeholder="First Name"
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
+                <div className="form-group2">
+                    <label>Last Name </label>
+                    <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        placeholder="Last Name"
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
+                <div className="form-group2">
+                    <label>University </label>
+                    <select
+                        name="university"
+                        value={formData.university}
+                        onChange={handleInputChange}
+                        required
+                    >
+                        <option value="">Select University</option>
+                        {universities.map((university, index) => (
+                            <option key={index} value={university.name}>
+                                {university.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-group2">
+                    <label>Email </label>
                     <input
                         type="email"
-                        value={email}
+                        name="email"
+                        value={formData.email}
                         placeholder="john.doe@uni.edu"
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={handleInputChange}
                         required
                     />
                 </div>
@@ -80,9 +175,10 @@ const SignUp = ({ toggleAuthMode }) => {
                     <div className="password-container2">
                         <input
                             type={showPassword ? 'text' : 'password'}
-                            value={password}
+                            name="password"
+                            value={formData.password}
                             placeholder="Password"
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={handleInputChange}
                             required
                         />
                         <FontAwesomeIcon
@@ -91,6 +187,66 @@ const SignUp = ({ toggleAuthMode }) => {
                             className="eye-icon"
                         />
                     </div>
+                </div>
+                <div className="form-group2">
+                    <label>Address </label>
+                    <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        placeholder="Street Address"
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
+                <div className="form-group2">
+                    <label>City </label>
+                    <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        placeholder="City"
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
+                <div className="form-group2">
+                    <label>State</label>
+                     <select
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        required
+                     >
+                         <option value="">Select State</option>
+                          {states.map((state, index) => (
+                        <option key={index} value={state}>
+                           {state}
+                        </option>
+                     ))}
+                  </select>
+                </div>
+                <div className="form-group2">
+                    <label>ZIP Code </label>
+                    <input
+                        type="text"
+                        name="zip"
+                        value={formData.zip}
+                        placeholder="ZIP Code"
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
+                <div className="form-group2">
+                    <label>Cellphone Number </label>
+                    <input
+                        type="tel"
+                        name="cellphone"
+                        value={formData.cellphone}
+                        placeholder="123-456-7890"
+                        onChange={handleInputChange}
+                        required
+                    />
                 </div>
                 <button type="submit" className="sign-in-button2">Sign Up</button>
             </form>

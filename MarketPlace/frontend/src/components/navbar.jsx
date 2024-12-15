@@ -179,7 +179,7 @@ const styles = {
   badge: {
     position: 'absolute',
     top: '5px',
-    right: '105px',
+    right: '118px',
     backgroundColor: 'red',
     color: 'white',
     fontSize: '12px',

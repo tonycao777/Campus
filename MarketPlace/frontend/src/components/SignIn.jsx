@@ -20,10 +20,19 @@ const SignIn = ({ toggleAuthMode }) => {
         setSuccess(null);
 
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Check if the email is verified
+            if (!user.emailVerified) {
+                setError('Please verify your email before signing in.');
+                return;  // Stop execution if email is not verified
+            }
+
             setSuccess('Sign in Successful');
             navigate('/listing');  // Redirect to the ListingPage after successful sign-in
         } catch (signInError) {
+            console.log(signInError)
             if (signInError.code === 'auth/wrong-password') {
                 setError('Incorrect password. Please try again.');
             } else if (signInError.code === 'auth/user-not-found') {
