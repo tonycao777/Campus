@@ -1,6 +1,7 @@
 // firebaseConfig.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getStorage } from 'firebase/storage'
 import { getFirestore, collection, addDoc, getDocs, getDoc, query, where, deleteDoc, doc } from "firebase/firestore"; // Using addDoc to add users
 import { getDatabase } from "firebase/database";
 
@@ -22,6 +23,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const realtimeDB = getDatabase(app);
+
+const storage = getStorage(app);
 
 const userRef = collection(db, 'Users');
 const itemRef = collection(db, 'Items');
@@ -121,4 +124,4 @@ export const fetchUserFullName = async (userId) => {
 consoleFetchItems();
 
 // Export for use in other components
-export { auth, db, realtimeDB, fetchUsers};
+export { auth, db, realtimeDB, fetchUsers, storage};

@@ -1,90 +1,122 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postItem } from '../firebaseConfig';
-import { v4 as uuidv4 } from 'uuid'; // Import UUID library
+import { v4 as uuidv4 } from 'uuid'; 
+import { ref, listAll, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { storage } from '../firebaseConfig';
 
 const PostItemPage = () => {
   const navigate = useNavigate();
+
+  const [imageUploads, setImageUploads] = useState([]); // Store files before upload
+  const [imageUrls, setImageUrls] = useState([]); // Store uploaded image URLs
+  const [imageList, setImageList] = useState([]);
+
+  const imageListRef = ref(storage, 'images/');
+
+  useEffect(() => {
+    listAll(imageListRef).then((response) => {
+      response.items.forEach((item) => {
+        getDownloadURL(item).then((url) => {
+          setImageList((prev) => [...prev, url]);
+        });
+      });
+    });
+  }, []);
+
   const [newItem, setNewItem] = useState({
     title: '',
     description: '',
     price: '',
     category: '',
     location: '',
-    campus: '', // Add campus field
+    campus: '',
     contactInfo: '',
-    images: [], // Store multiple images
+    images: [],
   });
 
   const [universities, setUniversities] = useState([]);
   const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false); // Track upload progress
 
   useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const response = await fetch('/world_universities_and_domains.json'); // Adjust path if needed
-        const data = await response.json();
-        const filteredUniversities = data.filter((university) => university.country === 'United States');
-        setUniversities(filteredUniversities);
-      } catch (error) {
-        console.error('Error fetching universities:', error);
-        setError('Failed to load universities.');
-      }
-    };
+          // Fetch all universities in the US
+          const fetchUniversities = async () => {
+              try {
+                  const response = await fetch('/world_universities_and_domains.json');
+                  const data = await response.json();
+                  const filteredUniversities = data
+                      .filter((university) => university.country === 'United States')
+                      .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
+      
+                  setUniversities(filteredUniversities);
+              } catch (error) {
+                  console.error("Error fetching universities:", error);
+              }
+          };
+      
+          fetchUniversities();
+      }, []);
 
-    fetchUniversities();
-
-    return () => {
-      // Clean up URLs created for image previews
-      newItem.images.forEach((file) => URL.revokeObjectURL(file.previewUrl));
-    };
-  }, [newItem.images]);
-
-  const handlePostItem = async () => {
-    // Check if any required field is missing
-    if (
-      !newItem.title ||
-      !newItem.description ||
-      !newItem.price ||
-      !newItem.category ||
-      !newItem.location ||
-      !newItem.campus || // Validate campus
-      !newItem.contactInfo ||
-      newItem.images.length === 0
-    ) {
-      alert('All fields are required!'); // Display an alert if any field is missing
-      return; // Prevent the item from being posted
+  const uploadImage = async () => {
+    if (imageUploads.length === 0) {
+      alert('Please select images to upload.');
+      return;
     }
-
-    // Use only the file property to create object URLs
-  const imageUrls = newItem.images.map(({ file }) => URL.createObjectURL(file));
-
-  const timestamp = new Date();
-  const uniqueId = uuidv4();
-
-  const itemToPost = {
-    id: uniqueId,
-    ...newItem,
-    images: imageUrls, // Use URLs for storage or uploading logic here
-    timestamp,
+  
+    setUploading(true); // Indicate that uploading is in progress
+  
+    try {
+      const uploadedUrls = [];
+      // Upload each image to Firebase
+      for (let i = 0; i < imageUploads.length; i++) {
+        const file = imageUploads[i];
+        const imageRef = ref(storage, `images/${uuidv4()}`);
+  
+        const uploadTask = uploadBytesResumable(imageRef, file);
+        await uploadTask;
+        const downloadURL = await getDownloadURL(imageRef);
+        uploadedUrls.push(downloadURL); // Collect the image URLs
+      }
+  
+      // Use the previous state to append new URLs without overwriting
+      setImageUrls((prevUrls) => [...prevUrls, ...uploadedUrls]);
+      setUploading(false); // Reset uploading state
+      alert('Images uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      setUploading(false);
+    }
   };
 
-  await postItem(itemToPost);
-  navigate('/listing');
-  
+  const handlePostItem = async () => {
+    if (!newItem.title || !newItem.description || !newItem.price || !newItem.category || !newItem.location || !newItem.campus || !newItem.contactInfo || imageUrls.length === 0) {
+      alert('All fields are required!');
+      return;
+    }
+
+    try {
+      const timestamp = new Date();
+      const uniqueId = uuidv4();
+
+      const itemToPost = {
+        id: uniqueId,
+        ...newItem,
+        images: imageUrls,
+        timestamp,
+      };
+
+      await postItem(itemToPost);
+      navigate('/listing');
+    } catch (error) {
+      console.error('Error posting item:', error);
+      alert('Failed to post the item.');
+    }
   };
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const filesWithPreview = files.map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-    }));
-
-    setNewItem((prevState) => ({
-      ...prevState,
-      images: [...prevState.images, ...filesWithPreview],
-    }));
+    const files = Array.from(e.target.files); // Allow multiple file selection
+    setImageUploads(files);
   };
 
   const handleBackToHome = () => {
@@ -115,12 +147,7 @@ const PostItemPage = () => {
         type="number"
         placeholder="Price"
         value={newItem.price}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (value === '' || Number(value) > 0) {
-            setNewItem({ ...newItem, price: value });
-          }
-        }}
+        onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
         style={styles.input}
         min="1"
         required
@@ -130,9 +157,7 @@ const PostItemPage = () => {
         onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
         style={styles.input}
       >
-        <option value="" disabled>
-          Select Category
-        </option>
+        <option value="" disabled>Select Category</option>
         <option value="Electronics">Electronics</option>
         <option value="Clothing">Clothing</option>
         <option value="Entertainment">Entertainment</option>
@@ -157,9 +182,7 @@ const PostItemPage = () => {
         style={styles.input}
         required
       >
-        <option value="" disabled>
-          Select Campus
-        </option>
+        <option value="" disabled>Select Campus</option>
         {universities.map((university, index) => (
           <option key={index} value={university.name}>
             {university.name}
@@ -174,29 +197,33 @@ const PostItemPage = () => {
         style={styles.input}
         required
       />
+  
+      {/* File input */}
       <input
         type="file"
-        accept="image/*"
         multiple
         onChange={handleFileChange}
         style={styles.input}
       />
+
       <div style={styles.imagePreviewContainer}>
-        {newItem.images.map(({ previewUrl }, index) => (
-          <img
-            key={index}
-            src={previewUrl}
-            alt={`Preview ${index + 1}`}
-            style={styles.previewImage}
-          />
+        {imageUploads.length > 0 && imageUploads.map((file, index) => (
+          <img key={index} src={URL.createObjectURL(file)} alt={`Preview ${index + 1}`} style={styles.previewImage} />
         ))}
       </div>
-      <button onClick={handlePostItem} style={styles.button}>
-        Post Item
-      </button>
-      <button onClick={handleBackToHome} style={styles.buttonSecondary}>
-        Back to Home
-      </button>
+  
+      {/* Upload button below preview */}
+      <button onClick={uploadImage} style={styles.uploadButton}>Upload Image</button>
+  
+      {/* Action buttons */}
+      <div style={styles.actionButtons}>
+        <button onClick={handlePostItem} style={styles.button}>
+          Post Item
+        </button>
+        <button onClick={handleBackToHome} style={styles.buttonSecondary}>
+          Back to Home
+        </button>
+      </div>
     </div>
   );
 };
@@ -223,13 +250,14 @@ const styles = {
     fontSize: '16px',
     border: '1px solid #ccc',
     borderRadius: '8px',
-    boxSizing: 'border-box', // Prevent padding from affecting width
+    boxSizing: 'border-box',
     transition: 'border-color 0.3s',
   },
   imagePreviewContainer: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '10px',
+    marginBottom: '20px',  // Space between preview and the upload button
   },
   previewImage: {
     width: '100px',
@@ -250,7 +278,6 @@ const styles = {
     cursor: 'pointer',
     outline: 'none',
   },
-
   buttonSecondary: {
     marginLeft: '275px',
     width: '25%',
@@ -264,6 +291,23 @@ const styles = {
     color: 'white',
     cursor: 'pointer',
     outline: 'none',
+  },
+  uploadButton: {
+    width: '30%',
+    padding: '10px',
+    marginBottom: '30px', // Space below the upload button for better alignment
+    fontSize: '16px',
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    boxSizing: 'border-box',
+    backgroundColor: '#8d04be',
+    color: 'white',
+    cursor: 'pointer',
+    outline: 'none',
+  },
+  actionButtons: {
+    display: 'flex',
+    justifyContent: 'space-between',
   },
   error: {
     color: 'red',

@@ -22,22 +22,23 @@ const EditItemPage = () => {
   });
 
   useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const response = await fetch("/world_universities_and_domains.json");
-        const data = await response.json();
-        const filteredUniversities = data.filter(
-          (university) => university.country === "United States"
-        );
-        setUniversities(filteredUniversities);
-      } catch (error) {
-        console.error("Error fetching universities:", error);
-        setError("Failed to load universities.");
-      }
-    };
-
-    fetchUniversities();
-  }, []);
+          // Fetch all universities in the US
+          const fetchUniversities = async () => {
+              try {
+                  const response = await fetch('/world_universities_and_domains.json');
+                  const data = await response.json();
+                  const filteredUniversities = data
+                      .filter((university) => university.country === 'United States')
+                      .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
+      
+                  setUniversities(filteredUniversities);
+              } catch (error) {
+                  console.error("Error fetching universities:", error);
+              }
+          };
+      
+          fetchUniversities();
+      }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

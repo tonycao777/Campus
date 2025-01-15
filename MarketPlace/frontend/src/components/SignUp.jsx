@@ -6,6 +6,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
 import '../styling/SignUp.css';
+import { storage } from '../firebaseConfig'; // Import Firebase storage
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import necessary Firebase Storage functions
 
 const SignUp = ({ toggleAuthMode }) => {
     const [formData, setFormData] = useState({
@@ -45,14 +47,16 @@ const SignUp = ({ toggleAuthMode }) => {
             try {
                 const response = await fetch('/world_universities_and_domains.json');
                 const data = await response.json();
-                const filteredUniversities = data.filter((university) => university.country === 'United States');
-                
+                const filteredUniversities = data
+                    .filter((university) => university.country === 'United States')
+                    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
+    
                 setUniversities(filteredUniversities);
             } catch (error) {
                 console.error("Error fetching universities:", error);
             }
         };
-
+    
         fetchUniversities();
     }, []);
 
@@ -60,14 +64,36 @@ const SignUp = ({ toggleAuthMode }) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
+    
+    const handleFileChange = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            // Create a storage reference
+            const storageRef = ref(storage, `profileImages/${file.name}`);
+            
+            // Upload the file
+            try {
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+    
+                // Save the download URL of the image
+                setFormData((prevData) => ({
+                    ...prevData,
+                    profilePicture: downloadURL, // Store the URL of the image
+                }));
+            } catch (error) {
+                setError("Error uploading profile picture: " + error.message);
+            }
+        }
+    };
 
     const handleSignUp = async (event) => {
         event.preventDefault();
         setError(null); // Reset error message
         setSuccessMessage(''); // Reset success message
-
-        const { email, password, firstName, lastName, university, address, city, zip, state, cellphone } = formData;
-
+    
+        const { email, password, firstName, lastName, university, address, city, zip, state, cellphone, profilePicture } = formData;
+    
         if (!email.endsWith('.edu')) {
             setError('Please use a valid .edu email address.');
             return;
@@ -77,11 +103,11 @@ const SignUp = ({ toggleAuthMode }) => {
             setError('Password must be greater than 8 characters');
             return;
         }
-
+    
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-
+    
             await addDoc(collection(db, 'Users'), {
                 userId: user.uid,
                 email: user.email,
@@ -93,22 +119,25 @@ const SignUp = ({ toggleAuthMode }) => {
                 zip,
                 state,
                 cellphone,
+                profilePicture, // Include the profile picture URL
                 createdAt: new Date().toISOString(),
+                following: [],
             });
-
+    
             fetchUsers(); // Optionally refresh users list
             await sendEmailVerification(user); // Send verification email
-
+    
             setSuccessMessage('Successfully signed up! A verification email has been sent.');
             setTimeout(() => {
                 toggleAuthMode(); // Switch to sign-in mode
                 navigate('/'); // Navigate to home or login page
             }, 1000);
-
+    
         } catch (signUpError) {
             setError(signUpError.message);
         }
     };
+    
 
     const togglePasswordVisibility = () => {
         setShowPassword((prevShowPassword) => !prevShowPassword);
@@ -248,6 +277,15 @@ const SignUp = ({ toggleAuthMode }) => {
                         required
                     />
                 </div>
+                <div className="form-group2">
+                    <label>Profile Picture </label>
+                     <input
+                    type="file"
+                    name="profilePicture"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                />
+</div>
                 <button type="submit" className="sign-in-button2">Sign Up</button>
             </form>
             {successMessage && <p className="success-message">{successMessage}</p>}

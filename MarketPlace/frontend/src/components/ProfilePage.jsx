@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebaseConfig"; // Adjust according to your Firebase config
+import { db, storage } from "../firebaseConfig"; // Adjust according to your Firebase config
 import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Import Firebase Storage
 import { useNavigate, useParams } from "react-router-dom";
-import { getAuth } from "firebase/auth"; // Import Firebase Auth to get current user's UID
+import { getAuth } from "firebase/auth";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { userId, viewOnly } = useParams(); // Added `viewOnly` to handle view-only profiles
+  const { userId, viewOnly } = useParams();
   const [userData, setUserData] = useState({
     email: "",
     university: "",
@@ -17,7 +18,9 @@ const ProfilePage = () => {
     city: "",
     state: "",
     zip: "",
+    profileIcon: "", // Add profileIcon to the user data
   });
+  const [newProfileImage, setNewProfileImage] = useState(null); // For storing the selected image file
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -26,11 +29,11 @@ const ProfilePage = () => {
 
       if (user) {
         const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("userId", "==", user.uid)); 
+        const q = query(usersRef, where("userId", "==", user.uid));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-          const docSnap = querySnapshot.docs[0]; 
+          const docSnap = querySnapshot.docs[0];
           setUserData(docSnap.data());
         } else {
           console.log("No user found!");
@@ -49,7 +52,7 @@ const ProfilePage = () => {
   };
 
   const homePage = () => {
-    navigate('/listing');
+    navigate("/listing");
   };
 
   const handleUpdateProfile = async () => {
@@ -58,11 +61,11 @@ const ProfilePage = () => {
 
     if (user) {
       const usersRef = collection(db, "Users");
-      const q = query(usersRef, where("userId", "==", user.uid)); 
+      const q = query(usersRef, where("userId", "==", user.uid));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        const docSnap = querySnapshot.docs[0]; 
+        const docSnap = querySnapshot.docs[0];
         const userRef = doc(db, "Users", docSnap.id);
 
         try {
@@ -86,19 +89,58 @@ const ProfilePage = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    setNewProfileImage(e.target.files[0]);
+  };
+
+  const handleUploadProfileIcon = async () => {
+    if (!newProfileImage) {
+      alert("Please select an image first!");
+      return;
+    }
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      const fileName = `${user.uid}_profileIcon`; // Unique filename
+      const imageRef = ref(storage, `profileImages/${fileName}`);
+
+      try {
+        // Upload the new image
+        await uploadBytes(imageRef, newProfileImage);
+
+        // Get the new image URL
+        const newImageURL = await getDownloadURL(imageRef);
+
+        // Update Firestore with the new profile icon URL
+        const usersRef = collection(db, "Users");
+        const q = query(usersRef, where("userId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const docSnap = querySnapshot.docs[0];
+          const userRef = doc(db, "Users", docSnap.id);
+
+          await updateDoc(userRef, { profilePicture: newImageURL });
+
+          // Update local state
+          setUserData((prev) => ({ ...prev, profilePicture: newImageURL }));
+          alert("Profile icon updated successfully!");
+        }
+      } catch (error) {
+        console.error("Error uploading profile icon:", error);
+        alert("Failed to update profile icon.");
+      }
+    }
+  };
+
   const fieldStyle = {
     padding: "10px",
     margin: "10px 0",
     border: "1px solid #ccc",
     borderRadius: "5px",
     width: "95%",
-  };
-
-  const readOnlyFieldStyle = {
-    ...fieldStyle,
-    backgroundColor: "#f9f9f9",
-    border: "1px solid #ddd",
-    color: "#555",
   };
 
   const containerStyle = {
@@ -119,120 +161,122 @@ const ProfilePage = () => {
     cursor: "pointer",
   };
 
-  const buttonSecondaryStyle = {
-    ...buttonStyle,
+  const buttonStyle1 = {
+    padding: "10px 20px",
+    margin: "10px 0",
     backgroundColor: "#8d04be",
-    marginLeft: "365px",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
     cursor: "pointer",
+    marginLeft: '350px'
   };
 
-  const header = {
-    textAlign: 'center', // Centers the header text
-  };
-
-  const subheader = {
-    textAlign: 'center', // Centers the header text
-  };
-  
   return (
     <div style={containerStyle}>
-      <h1 style={header}>Profile Page</h1>
-      <p style={subheader}>
-        {viewOnly === "true" ? "Viewing User's Profile" : "Your Profile"}
-      </p>
-      <form onSubmit={(e) => e.preventDefault()}>
+      <h1>Profile Page</h1>
+      <p>{viewOnly === "true" ? "Viewing User's Profile" : "Your Profile"}</p>
       <div>
-          <label>First Name:</label>
-          <input
-            type="text"
-            name="firstName"
-            value={userData.firstName}
-            onChange={handleInputChange}
-            placeholder={userData.firstName || "First Name"}
-            style={fieldStyle}
+        <label>Profile Icon:</label>
+        <div>
+          <img
+            src={userData.profilePicture} // Use default image if none is set
+            alt="Profile Icon"
+            style={{ width: "100px", height: "100px", borderRadius: "50%" }}
           />
         </div>
-        <div>
-          <label>Last Name:</label>
-          <input
-            type="text"
-            name="lastName"
-            value={userData.lastName}
-            onChange={handleInputChange}
-            placeholder={userData.lastName || "Last Name"}
-            style={fieldStyle}
-          />
-        </div>
-        <div>
-          <label>Cellphone:</label>
-          <input
-            type="text"
-            name="cellphone"
-            value={userData.cellphone}
-            onChange={handleInputChange}
-            placeholder={userData.cellphone || "Cellphone"}
-            style={fieldStyle}
-          />
-        </div>
-        <div>
-          <label>Email:</label>
-          <p style={readOnlyFieldStyle}>{userData.email}</p>
-        </div>
-        <div>
-          <label>University:</label>
-          <p style={readOnlyFieldStyle}>{userData.university}</p>
-        </div>
-        <div>
-          <label>Address:</label>
-          <input
-            type="text"
-            name="address"
-            value={userData.address}
-            onChange={handleInputChange}
-            placeholder={userData.address || "Address"}
-            style={fieldStyle}
-          />
-        </div>
-        <div>
-          <label>City:</label>
-          <input
-            type="text"
-            name="city"
-            value={userData.city}
-            onChange={handleInputChange}
-            placeholder={userData.city || "City"}
-            style={fieldStyle}
-          />
-        </div>
-        <div>
-          <label>State:</label>
-          <input
-            type="text"
-            name="state"
-            value={userData.state}
-            onChange={handleInputChange}
-            placeholder={userData.state || "State"}
-            style={fieldStyle}
-          />
-        </div>
-        <div>
-          <label>Zip:</label>
-          <input
-            type="text"
-            name="zip"
-            value={userData.zip}
-            onChange={handleInputChange}
-            placeholder={userData.zip || "Zip"}
-            style={fieldStyle}
-          />
-        </div>
-        <button type="button" onClick={homePage} style={buttonStyle}>
-          Home Page
+        <input type="file" accept="image/*" onChange={handleFileChange} style={fieldStyle} />
+        <button type="button" onClick={handleUploadProfileIcon} style={buttonStyle}>
+          Upload New Profile Icon
         </button>
-        <button type="button" onClick={handleUpdateProfile} style={buttonSecondaryStyle}>
-          Update Profile
-        </button>
-      </form>
+      </div>
+      <div>
+        <label>First Name:</label>
+        <input
+          type="text"
+          name="firstName"
+          value={userData.firstName}
+          onChange={handleInputChange}
+          style={fieldStyle}
+        />
+      </div>
+      <div>
+        <label>Last Name:</label>
+        <input
+          type="text"
+          name="lastName"
+          value={userData.lastName}
+          onChange={handleInputChange}
+          style={fieldStyle}
+        />
+      </div>
+      <div>
+        <label>Email:</label>
+        <input
+          type="email"
+          name="email"
+          value={userData.email}
+          onChange={handleInputChange}
+          style={fieldStyle}
+          disabled
+        />
+      </div>
+      <div>
+        <label>Cellphone:</label>
+        <input
+          type="text"
+          name="cellphone"
+          value={userData.cellphone}
+          onChange={handleInputChange}
+          style={fieldStyle}
+        />
+      </div>
+      <div>
+        <label>Address:</label>
+        <input
+          type="text"
+          name="address"
+          value={userData.address}
+          onChange={handleInputChange}
+          style={fieldStyle}
+        />
+      </div>
+      <div>
+        <label>City:</label>
+        <input
+          type="text"
+          name="city"
+          value={userData.city}
+          onChange={handleInputChange}
+          style={fieldStyle}
+        />
+      </div>
+      <div>
+        <label>State:</label>
+        <input
+          type="text"
+          name="state"
+          value={userData.state}
+          onChange={handleInputChange}
+          style={fieldStyle}
+        />
+      </div>
+      <div>
+        <label>Zip:</label>
+        <input
+          type="text"
+          name="zip"
+          value={userData.zip}
+          onChange={handleInputChange}
+          style={fieldStyle}
+        />
+      </div>
+      <button type="button" onClick={homePage} style={buttonStyle}>
+        Home Page
+      </button>
+      <button type="button" onClick={handleUpdateProfile} style={buttonStyle1}>
+        Update Profile
+      </button>
     </div>
   );
 };

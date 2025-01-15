@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './SideBar';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig'; // Adjust import based on your project
 
 const Navbar = ({
   unreadCount,
@@ -15,6 +17,28 @@ const Navbar = ({
 }) => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [profilePicture, setProfilePicture] = useState('');
+
+  useEffect(() => {
+    const fetchProfilePicture = async () => {
+      try {
+        const userRef = collection(db, 'Users');
+        const q = query(userRef, where('userId', '==', auth.currentUser?.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          setProfilePicture(userData.profilePicture || '');
+        }
+      } catch (error) {
+        console.error('Error fetching profile picture:', error);
+      }
+    };
+
+    if (auth.currentUser?.uid) {
+      fetchProfilePicture();
+    }
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
@@ -83,6 +107,13 @@ const Navbar = ({
         <button onClick={toggleSidebar} style={styles.profileButton}>
           Account
         </button>
+        {profilePicture && (
+          <img
+            src={profilePicture}
+            alt="Profile"
+            style={styles.profilePicture}
+          />
+        )}
       </nav>
 
       {/* Conditionally render Sidebar with transition */}
@@ -117,6 +148,7 @@ const styles = {
     fontSize: '14px',
     width: '150px',
     cursor: 'pointer',
+    marginLeft: '-200px'
   },
   title: {
     fontSize: '20px',
@@ -192,6 +224,15 @@ const styles = {
     justifyContent: 'center',
     boxShadow: '0 0 5px rgba(0, 0, 0, 0.3)',
   },
+  profilePicture: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    marginLeft: '10px',
+    objectFit: 'cover',
+    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)',
+    cursor: 'pointer',
+  }
 };
 
 export default Navbar;

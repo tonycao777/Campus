@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { auth, fetchUserFullName, db, deleteItem } from "../firebaseConfig";
+import { auth, fetchUserFullName, db, deleteItem, storage } from "../firebaseConfig";
 import { useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import ChatButton from "./chatButton";
 import ProfileButton from './profileButton';
+import { ref, deleteObject } from "firebase/storage";
 
 const ItemDetails = () => {
   const [item, setItem] = useState(null);
@@ -47,7 +48,22 @@ const ItemDetails = () => {
   const handleDeleteItem = async () => {
     if (item) {
       try {
+        // Loop through each image URL in the images array
+        for (const imageUrl of item.images) {
+          // Extract the file path from the image URL
+          const filePath = imageUrl.split('/o/')[1].split('?')[0]; // Extract path after /o/
+  
+          // Get a reference to the image file in Firebase Storage
+          const imageRef = ref(storage, decodeURIComponent(filePath));
+  
+          // Delete the image from Firebase Storage
+          await deleteObject(imageRef);
+        }
+  
+        // Now delete the Firestore document
         await deleteItem(id);
+  
+        // Navigate back to the listing page
         navigate("/listing");
       } catch (error) {
         console.error("Error deleting item:", error);
@@ -91,7 +107,7 @@ const ItemDetails = () => {
                     ◀
                   </button>
                   <img
-                    src={item.images[currentImageIndex]}
+                    src={item.images[currentImageIndex]}  // Display image from Firebase Storage URL
                     alt="Item"
                     style={styles.carouselImage}
                   />
@@ -186,16 +202,6 @@ const styles = {
     transform: "scale(1.1)", // Keep the scaling effect on hover
   },
 
-  arrowButtonLeft: {
-    position: "absolute",
-    left: "10px",
-  },
-  arrowButtonRight: {
-    position: "absolute",
-    right: "10px",
-  },
-
-  // Using the symbols directly or customizing with CSS if necessary
   carousel: {
     display: "flex",
     alignItems: "center",
@@ -269,4 +275,3 @@ const styles = {
 };
 
 export default ItemDetails;
-

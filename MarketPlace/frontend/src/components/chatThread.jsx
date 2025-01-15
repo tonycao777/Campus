@@ -8,33 +8,34 @@ const ChatThread = () => {
   const [chat, setChat] = useState(null);
   const [otherUserName, setOtherUserName] = useState("");
   const [message, setMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchChat = async () => {
       const chatDocRef = doc(db, "Chats", chatId);
       const chatDoc = await getDoc(chatDocRef);
-  
+
       if (chatDoc.exists()) {
         const chatData = chatDoc.data();
         setChat(chatData);
-  
+
         const otherUserId = chatData.participants.find(
           (participantId) => participantId !== auth.currentUser.uid
         );
-  
+
         if (otherUserId) {
           const name = await fetchUserFullName(otherUserId);
           setOtherUserName(name);
         }
-  
+
         markMessagesAsRead(chatData);
       } else {
         alert("Chat not found");
         navigate("/inbox");
       }
     };
-  
+
     fetchChat();
   }, [chatId, navigate]);
 
@@ -97,14 +98,29 @@ const ChatThread = () => {
     return null;
   };
 
+  // Filter messages based on the search query
+  const filteredMessages = chat?.messages.filter((msg) =>
+    msg.text.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div style={styles.container}>
       <h2 style={styles.header}>Chat Thread</h2>
       {chat && (
         <div>
-          <h3 style={styles.chatWith}>Chat with: {otherUserName}</h3>
+          <div style={styles.chatHeader}>
+            <h3 style={styles.chatWith}>Chat with: {otherUserName}</h3>
+            {/* Search bar next to the name */}
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search messages"
+              style={styles.searchInput}
+            />
+          </div>
           <div style={styles.chatBox}>
-            {chat.messages.map((msg, index) => (
+            {filteredMessages.map((msg, index) => (
               <div
                 key={index}
                 style={{
@@ -154,9 +170,23 @@ const styles = {
     color: "#8d04be",
     marginBottom: "1rem",
   },
+  chatHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
   chatWith: {
     color: "#8d04be",
     marginBottom: "1rem",
+  },
+  searchInput: {
+    padding: "0.5rem",
+    fontSize: "0.9rem",
+    borderRadius: "8px",
+    border: "1px solid #ddd",
+    width: "200px",
+    marginLeft: "10px",
   },
   chatBox: {
     height: "300px",
@@ -203,9 +233,6 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
     marginRight: "0.5rem",
-  },
-  buttonHover: {
-    backgroundColor: "#73039a",
   },
 };
 

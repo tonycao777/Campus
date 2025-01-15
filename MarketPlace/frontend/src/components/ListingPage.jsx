@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import Sidebar from './SideBar';
+import { getAuth } from 'firebase/auth';
 
 
 
@@ -22,6 +23,8 @@ const navigate = useNavigate();
 const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
+const auth = getAuth();
+const currentUser = auth.currentUser;
 
 
 
@@ -39,58 +42,89 @@ const predefinedCategories = [
 ];
 
 useEffect(() => {
-  // Fetch user campus from Firestore and set in local storage
   const fetchUserCampus = async () => {
     try {
-      const userRef = collection(db, 'Users'); // Adjust the collection name
+      const userRef = collection(db, 'Users');
       const q = query(userRef, where('userId', '==', auth.currentUser?.uid));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
         const userData = querySnapshot.docs[0].data();
-        const campus = userData.university || ''; // Fallback to empty string
-        setSelectedCampus(campus);
+        const campus = userData.university || ''; // Default to an empty string if not found
+        setSelectedCampus(campus); // Directly set the state
       }
     } catch (error) {
       console.error('Error fetching user campus:', error);
     }
   };
 
- if (auth.currentUser?.uid) {
+  if (auth.currentUser?.uid) {
     fetchUserCampus();
   }
 }, []);
 
 
+
 // Fetching all items from the database
 const fetchAllItems = async () => {
+  // Fetch the current user's following list from Firestore
+  const usersRef = collection(db, "Users");  // Reference to Users collection
+  const q = query(usersRef, where("userId", "==", currentUser.uid));  // Query to fetch the current user's document using userId field
+  
+  // Fetch the snapshot of the query
+  const querySnapshot = await getDocs(q);
+
+  // Check if the user exists
+  if (querySnapshot.empty) {
+    console.error("User not found or no following field.");
+    return;
+  }
+
+  // Extract the user's document data
+  const userDoc = querySnapshot.docs[0].data();  // Since the query returns an array, we take the first document
+  const followingUserIds = userDoc.following || [];  // Get the following array from the document, default to empty array
+
+  // Fetch all items (e.g., posts) from the database
   const fetchedItems = await fetchItems();
-  const sortedItems = fetchedItems.sort((a, b) => {
+
+  // Split the items into two arrays: one for followed users and the other for others
+  const followedItems = fetchedItems.filter((item) => followingUserIds.includes(item.userId));
+  const otherItems = fetchedItems.filter((item) => !followingUserIds.includes(item.userId));
+
+  // Sort followed items by timestamp, latest first
+  const sortedFollowedItems = followedItems.sort((a, b) => {
     const timestampA = a.timestamp instanceof Date ? a.timestamp : a.timestamp.toDate();
     const timestampB = b.timestamp instanceof Date ? b.timestamp : b.timestamp.toDate();
     return timestampB - timestampA;
   });
 
+  // Sort other items by timestamp, latest first
+  const sortedOtherItems = otherItems.sort((a, b) => {
+    const timestampA = a.timestamp instanceof Date ? a.timestamp : a.timestamp.toDate();
+    const timestampB = b.timestamp instanceof Date ? b.timestamp : b.timestamp.toDate();
+    return timestampB - timestampA;
+  });
+
+  // Combine the arrays: followed items first, then other items
+  const sortedItems = [...sortedFollowedItems, ...sortedOtherItems];
+
+  // Update the state with sorted items
   setItems(sortedItems);
   setFilteredItems(sortedItems);
 
-
-
-
+  // Fetch and map user names
   const uniqueUserIds = [...new Set(sortedItems.map((item) => item.userId))];
   const namePromises = uniqueUserIds.map(async (userId) => {
     const name = await fetchUserFullName(userId);
     return { userId, name };
   });
 
-
-
-
   const names = await Promise.all(namePromises);
   const nameMap = {};
   names.forEach(({ userId, name }) => {
     nameMap[userId] = name;
   });
+
   setUserNames(nameMap);
 };
 
@@ -105,19 +139,23 @@ const handleViewDetails = (itemId) => {
 useEffect(() => {
   // Fetch all universities in the US
   const fetchUniversities = async () => {
-      try {
-          const response = await fetch('/world_universities_and_domains.json');
-          const data = await response.json();
-          const filteredUniversities = data.filter((university) => university.country === 'United States');
-        
-          setAllCampuses(filteredUniversities);
-      } catch (error) {
-          console.error("Error fetching universities:", error);
-      }
+    try {
+      const response = await fetch('/world_universities_and_domains.json');
+      const data = await response.json();
+      const filteredUniversities = data.filter((university) => university.country === 'United States');
+
+      // Sort universities alphabetically by name
+      const sortedUniversities = filteredUniversities.sort((a, b) => {
+        if (a.name < b.name) return -1;
+        if (a.name > b.name) return 1;
+        return 0;
+      });
+
+      setAllCampuses(sortedUniversities);
+    } catch (error) {
+      console.error("Error fetching universities:", error);
+    }
   };
-
-
-
 
   fetchUniversities();
 }, []);
