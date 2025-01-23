@@ -1,0 +1,20 @@
+{
+  "name": "campus",
+  "version": "1.0.0",
+  "description": "Software Development for Campus App",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonycao777/Campus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tonycao777/Campus/issues"
+  },
+  "homepage": "https://github.com/tonycao777/Campus#readme"
+}
