@@ -1,0 +1,107 @@
+
+
+.login-page2 {
+    width: 500px;
+    margin-left:500px;
+    margin-right: 20px;
+    margin-top: 150px;
+    display: flex;
+    flex-direction: column;
+}
+
+.signUptitle{
+    margin-left: 75px;
+}
+
+.login-form2 {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group2 {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.form-group2 label {
+    width: 150px; /* Adjust the width based on your preference */
+    margin-right: 10px; /* Space between label and input */
+    text-align: right; /* Align label text to the right */
+    font-weight: bold;
+}
+
+.form-group2 input {
+    width: 100%; /* Ensures the dropdown and inputs span the same width */
+    padding: 10px; /* Matches the padding of input fields */
+    font-size: 16px; /* Matches the font size */
+    border: 1px solid #ccc; /* Matches the border styling */
+    border-radius: 4px; /* Matches the border radius */
+    box-sizing: border-box; /* Ensures padding doesn't increase the element's size */
+}
+
+.form-group2 select {
+    width: 100%; /* Ensures the dropdown and inputs span the same width */
+    padding: 10px; /* Matches the padding of input fields */
+    font-size: 16px; /* Matches the font size */
+    border: 1px solid #ccc; /* Matches the border styling */
+    border-radius: 4px; /* Matches the border radius */
+    box-sizing: border-box; /* Ensures padding doesn't increase the element's size */
+}
+
+.sign-in-button2 {
+    padding: 10px;
+    background-color: #8d04be;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.sign-in-button2:hover {
+    background-color: #8d04be;
+}
+
+.success-message2 {
+    color: green;
+    margin-top: 10px;
+}
+
+.error-message2 {
+    color: red;
+    margin-top: 10px;
+}
+
+.sign-up-link2 {
+    color: blue;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.password-container2 {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    font-size: 14px;
+}
+
+.password-container2 input {
+    padding-right: 30px; /* Add padding to make space for the icon */
+}
+
+.eye-icon2 {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    color: #888; /* Customize the color as needed */
+}
+
+.subheading2{
+    font-size: small;
+    font-weight: 500;
+    margin-left: 200px;
+    margin-bottom: 10px;
+}
