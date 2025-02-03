@@ -34,7 +34,7 @@ const SignIn = ({ toggleAuthMode }) => {
         } catch (signInError) {
             console.log(signInError)
             if (signInError.code === 'auth/wrong-password') {
-                setError('Incorrect password. Please try again.');
+                setError('Incorrect password. Please try again later.');
             } else if (signInError.code === 'auth/user-not-found') {
                 setError('User not found. Please Sign Up.');
             } else {
