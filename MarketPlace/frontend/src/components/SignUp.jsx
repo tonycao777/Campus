@@ -107,7 +107,8 @@ const SignUp = ({ toggleAuthMode }) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-    
+            const defaultProfilePicture = profilePicture || ""; // Replace with your default image URL
+
             await addDoc(collection(db, 'Users'), {
                 userId: user.uid,
                 email: user.email,
@@ -119,7 +120,7 @@ const SignUp = ({ toggleAuthMode }) => {
                 zip,
                 state,
                 cellphone,
-                profilePicture, // Include the profile picture URL
+                profilePicture: defaultProfilePicture, // Include the profile picture URL
                 createdAt: new Date().toISOString(),
                 following: [],
             });
